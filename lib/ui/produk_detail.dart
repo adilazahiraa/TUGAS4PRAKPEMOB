@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:tokokita/model/produk.dart'; // Pastikan import model Produk
-import 'package:tokokita/ui/produk_form.dart'; // Pastikan import ProdukForm
+import 'package:tokokita/bloc/produk_bloc.dart';
+import 'package:tokokita/model/produk.dart';
+import 'package:tokokita/ui/produk_form.dart';
+import 'package:tokokita/ui/produk_page.dart';
+import 'package:tokokita/widget/warning_dialog.dart';
 
+// ignore: must_be_immutable
 class ProdukDetail extends StatefulWidget {
-  final Produk? produk;
+  Produk? produk;
 
   ProdukDetail({Key? key, this.produk}) : super(key: key);
 
@@ -16,35 +20,24 @@ class _ProdukDetailState extends State<ProdukDetail> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detail Produk Adila'),
+        title: const Text('Detail Produk'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: Center(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Kode Produk
             Text(
-              "Kode: ${widget.produk?.kodeProduk ?? '-'}",
+              "Kode : ${widget.produk?.kodeProduk ?? 'N/A'}",
               style: const TextStyle(fontSize: 20.0),
             ),
-            const SizedBox(height: 8),
-            
-            // Nama Produk
             Text(
-              "Nama: ${widget.produk?.namaProduk ?? '-'}",
+              "Nama : ${widget.produk?.namaProduk ?? 'N/A'}",
               style: const TextStyle(fontSize: 18.0),
             ),
-            const SizedBox(height: 8),
-            
-            // Harga Produk
             Text(
-              "Harga: Rp. ${widget.produk?.hargaProduk?.toString() ?? '-'}",
+              "Harga : Rp. ${widget.produk?.hargaProduk?.toString() ?? '0'}",
               style: const TextStyle(fontSize: 18.0),
             ),
-            const SizedBox(height: 20),
-            
-            // Tombol Hapus dan Edit
             _tombolHapusEdit(),
           ],
         ),
@@ -52,7 +45,6 @@ class _ProdukDetailState extends State<ProdukDetail> {
     );
   }
 
-  // Widget untuk menampilkan tombol Hapus dan Edit
   Widget _tombolHapusEdit() {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -64,52 +56,74 @@ class _ProdukDetailState extends State<ProdukDetail> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ProdukForm(produk: widget.produk),
+                builder: (context) => ProdukForm(
+                  produk: widget.produk,
+                ),
               ),
             );
           },
         ),
-        
-        const SizedBox(width: 8),
-        
         // Tombol Hapus
         OutlinedButton(
           child: const Text("DELETE"),
-          onPressed: () => confirmHapus(),
+          onPressed: confirmHapus,
         ),
       ],
     );
   }
 
-  // Konfirmasi penghapusan produk
   void confirmHapus() {
+    AlertDialog alertDialog = AlertDialog(
+      content: const Text("Yakin ingin menghapus data ini?"),
+      actions: [
+        // Tombol hapus
+        OutlinedButton(
+          child: const Text("Ya"),
+          onPressed: () {
+            final id = widget.produk?.id;
+            if (id != null) {
+              // Mengirim ID sebagai String
+              ProdukBloc.deleteProduk(id: id).then(
+                (value) {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                      builder: (context) => const ProdukPage(),
+                    ),
+                    (route) => false,
+                  );
+                },
+                onError: (error) {
+                  // Tampilkan dialog jika ada error
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) => WarningDialog(
+                      description: "Hapus gagal: $error", // Menampilkan pesan error
+                    ),
+                  );
+                },
+              );
+            } else {
+              // Tampilkan dialog jika ID tidak valid
+              showDialog(
+                context: context,
+                builder: (BuildContext context) => const WarningDialog(
+                  description: "ID produk tidak valid.",
+                ),
+              );
+            }
+          },
+        ),
+        // Tombol batal
+        OutlinedButton(
+          child: const Text("Batal"),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ],
+    );
+
     showDialog(
+      builder: (context) => alertDialog,
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Konfirmasi"),
-          content: const Text("Yakin ingin menghapus data ini?"),
-          actions: [
-            // Tombol Ya untuk menghapus
-            OutlinedButton(
-              child: const Text("Ya"),
-              onPressed: () {
-                // TODO: Tambahkan logika hapus produk
-                Navigator.pop(context); // Menutup dialog
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Produk berhasil dihapus")),
-                );
-              },
-            ),
-            
-            // Tombol Batal
-            OutlinedButton(
-              child: const Text("Batal"),
-              onPressed: () => Navigator.pop(context), // Menutup dialog
-            ),
-          ],
-        );
-      },
     );
   }
 }

@@ -11,13 +11,11 @@ class Login {
     return Login(
       code: obj['code'],
       status: obj['status'],
-      token: obj['data'] != null ? obj['data']['token'] : null,
-      userID: obj['data'] != null && obj['data']['user'] != null
-          ? obj['data']['user']['id']
-          : null,
-      userEmail: obj['data'] != null && obj['data']['user'] != null
-          ? obj['data']['user']['email']
-          : null,
+      token: obj['data']['token'],
+      userID: obj['data']['user']['id'] is String
+          ? int.tryParse(obj['data']['user']['id'])
+          : obj['data']['user']['id'],
+      userEmail: obj['data']['user']['email'],
     );
   }
 }
